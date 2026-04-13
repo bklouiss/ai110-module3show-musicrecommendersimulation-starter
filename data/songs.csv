@@ -9,3 +9,13 @@ id,title,artist,genre,mood,energy,tempo_bpm,valence,danceability,acousticness
 8,Night Drive Loop,Neon Echo,synthwave,moody,0.75,110,0.49,0.73,0.22
 9,Focus Flow,LoRoom,lofi,focused,0.40,80,0.59,0.60,0.78
 10,Rooftop Lights,Indigo Parade,indie pop,happy,0.76,124,0.81,0.82,0.35
+11,Neon Pulse,Cyber Drift,electronic,energetic,0.89,135,0.72,0.85,0.08
+12,Moonlight Sonata,Echo Keys,classical,melancholic,0.31,70,0.45,0.30,0.98
+13,Southern Comfort,Rust & Honey,country,romantic,0.58,96,0.79,0.68,0.92
+14,Concrete Jungle,Drive City,hip-hop,intense,0.85,92,0.52,0.77,0.12
+15,Velvet Dreams,Soul Guide,r&b,melancholic,0.48,86,0.65,0.71,0.25
+16,Mountain Echo,Wooden Path,folk,peaceful,0.44,88,0.77,0.49,0.95
+17,Thunder Strike,Iron Beast,metal,intense,0.96,160,0.35,0.62,0.05
+18,Reggae Vibes,Island Sound,reggae,relaxed,0.55,95,0.74,0.68,0.78
+19,Blues Highway,Delta Souls,blues,melancholic,0.52,100,0.48,0.55,0.88
+20,Adventure Calls,Quest Makers,ambient,adventurous,0.66,105,0.68,0.52,0.85

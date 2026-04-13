@@ -11,23 +11,181 @@ Your goal is to:
 - Evaluate what your system gets right and wrong
 - Reflect on how this mirrors real world AI recommenders
 
-Replace this paragraph with your own summary of what your version does.
+This implementation builds a content-based music recommender using a fixed scoring algorithm. Given a user's favorite genre, mood, target energy level, and acoustic preference, it scores all 20 songs in the catalog and returns the top-5 matches. The system is fully transparent—every recommendation has an explainable score breakdown—making it useful for understanding how recommendation systems can amplify or minimize certain music types.
 
 ---
 
 ## How The System Works
 
-Explain your design in plain language.
+### Real-World Context
 
-Some prompts to answer:
+Real-world music recommenders (like Spotify or Apple Music) use **collaborative filtering** (what similar users liked) and **content-based filtering** (song audio features). This simulation implements **pure content-based filtering**: we score songs purely on their musical characteristics and how they match a user's stated preferences. Our version prioritizes **interpretability and simplicity** over accuracy—every recommendation decision is transparent and explainable, which is useful for understanding *why* a system makes choices and where bias might creep in.
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+### Song Features
 
-You can include a simple diagram or bullet list if helpful.
+Each `Song` object uses these attributes to represent its musical profile:
+
+- **Categorical labels**: `genre` (pop, lofi, rock, etc.) and `mood` (happy, chill, intense, etc.)
+- **Numeric audio features**:
+  - `energy` (0.0–1.0): perceived loudness and intensity
+  - `acousticness` (0.0–1.0): acoustic vs. electronic production
+  - `valence` (0.0–1.0): musical positivity or brightness
+  - `danceability` (0.0–1.0): rhythmic groove suitability
+  - `tempo_bpm`: beats per minute
+
+### User Profile
+
+Each `UserProfile` captures:
+
+- `favorite_genre`: the genre they want to hear
+- `favorite_mood`: the emotional tone they're seeking
+- `target_energy`: their desired energy level (e.g., 0.8 for high-intensity, 0.3 for calm)
+- `likes_acoustic`: boolean preference for acoustic vs. produced sounds
+
+### Scoring Algorithm
+
+For each song, we compute a composite score:
+
+```
+score = 
+  (2.0 × [genre matches])
+  + (1.5 × [mood matches])
+  + (1.0 × [1.0 - |song.energy - user.target_energy|])
+  + (0.5 × [acoustic preference bonus])
+```
+
+**Genre** and **mood** are binary matches (0 or 1). **Energy** uses proximity scoring—songs close to the user's target energy get higher scores than songs with extreme values. **Acousticness** adds a small bonus if the user's preference aligns.
+
+### Ranking & Selection
+
+We sort all songs by score (highest first) and return the top-*k* results. Ties are broken by song ID.
+
+### Algorithm Recipe: Finalized Scoring Logic
+
+The scoring function runs independently for each song:
+
+```python
+def score_song(song, user_profile):
+    """
+    Compute a recommendation score for a single song.
+    Higher score = better match for this user.
+    """
+    score = 0.0
+    
+    # Genre match: +2.0 if exact match (primary filter)
+    if song['genre'] == user_profile['favorite_genre']:
+        score += 2.0
+    
+    # Mood match: +1.5 if exact match (secondary filter)
+    if song['mood'] == user_profile['favorite_mood']:
+        score += 1.5
+    
+    # Energy proximity: penalize distance from target (0.0 to 1.0)
+    energy_distance = abs(song['energy'] - user_profile['target_energy'])
+    score += 1.0 - energy_distance
+    
+    # Acoustic preference: ±0.5 bonus/penalty
+    if user_profile['likes_acoustic']:
+        if song['acousticness'] > 0.6:
+            score += 0.5
+        elif song['acousticness'] < 0.3:
+            score -= 0.5
+    else:
+        if song['acousticness'] < 0.3:
+            score += 0.5
+        elif song['acousticness'] > 0.6:
+            score -= 0.5
+    
+    return score
+```
+
+**Maximum possible score:** 5.0 (perfect match on all dimensions)  
+**Minimum possible score:** -1.0 (wrong genre, wrong mood, wrong energy, wrong acoustic type)
+
+**Weighting philosophy:**
+- **Genre (2.0)** is the strongest signal—a user asking for "pop" won't be satisfied with metal, even if the energy matches
+- **Mood (1.5)** is the secondary indicator—ensures emotional context aligns
+- **Energy (1.0)** adds precision—differentiates between two songs of the same genre/mood
+- **Acoustic (±0.5)** is a tie-breaker—small but meaningful preference signal
+
+### Known Biases & Limitations
+
+This system makes simplifying assumptions that can introduce bias:
+
+1. **Genre rigidity:** The recommendation heavily favors exact genre matches (+2.0 weight). A user who enjoys both pop and indie rock will rarely see indie rock songs, even when they'd be a great fit. **Impact:** Conservative users get repetitive catalogs; explorers miss serendipitous discoveries.
+
+2. **Mood as a proxy:** Mood is a human label assigned once per song, but the same mood (e.g., "chill") spans very different subgenres (ambient, lofi, jazz). Two "chill" songs might feel nothing alike. **Impact:** System conflates distinct emotional experiences.
+
+3. **Feature brittleness:** Energy and acousticness are treated as universal axes, but they're context-dependent. A 0.8 energy symphony feels completely different than 0.8 energy EDM. **Impact:** Numeric features alone can't capture genre-specific semantics.
+
+4. **No temporal or contextual awareness:** The system doesn't know if you're recommending for a workout, dinner party, or study session. The same user profile always produces the same results. **Impact:** No adaptation to use case.
+
+5. **No diversity penalty:** If the top 5 songs all come from the same artist, the system happily returns all 5. **Impact:** Monotonous recommendations; missed opportunity for variety.
+
+6. **Binary acoustic preference:** Real users have nuanced acoustic preferences that vary by genre (love acoustic guitar in folk, want synths in electronic). **Impact:** Oversimplification forces users into an either/or choice.
+
+### Sample Output: CLI Verification
+
+Running the default "Workout Enthusiast" profile (pop + intense + energy 0.85 + not acoustic):
+
+```
+================================================================================
+TOP 5 RECOMMENDATIONS FOR: POP / INTENSE
+================================================================================
+
+1. GYM HERO
+   Artist: Max Pulse
+   Score: 4.92 / 5.0
+   Why this match:
+      • Genre match: pop (+2.0)
+      • Mood match: intense (+1.5)
+      • Energy proximity: 0.93 vs 0.85 (+0.920)
+      • Electric match: 0.05 low (+0.5)
+
+2. SUNRISE CITY
+   Artist: Neon Echo
+   Score: 3.47 / 5.0
+   Why this match:
+      • Genre match: pop (+2.0)
+      • Mood mismatch: happy vs intense (0.0)
+      • Energy proximity: 0.82 vs 0.85 (+0.970)
+      • Electric match: 0.18 low (+0.5)
+
+3. CONCRETE JUNGLE
+   Artist: Drive City
+   Score: 3.00 / 5.0
+   Why this match:
+      • Genre mismatch: hip-hop vs pop (0.0)
+      • Mood match: intense (+1.5)
+      • Energy proximity: 0.85 vs 0.85 (+1.000)
+      • Electric match: 0.12 low (+0.5)
+
+4. STORM RUNNER
+   Artist: Voltline
+   Score: 2.94 / 5.0
+   Why this match:
+      • Genre mismatch: rock vs pop (0.0)
+      • Mood match: intense (+1.5)
+      • Energy proximity: 0.91 vs 0.85 (+0.940)
+      • Electric match: 0.10 low (+0.5)
+
+5. THUNDER STRIKE
+   Artist: Iron Beast
+   Score: 2.89 / 5.0
+   Why this match:
+      • Genre mismatch: metal vs pop (0.0)
+      • Mood match: intense (+1.5)
+      • Energy proximity: 0.96 vs 0.85 (+0.890)
+      • Electric match: 0.05 low (+0.5)
+
+================================================================================
+```
+
+**Key observations:**
+- Gym Hero wins decisively (4.92) because it matches on all four dimensions
+- Sunrise City scores well but loses points for "happy" mood instead of "intense"
+- Concrete Jungle, Storm Runner, and Thunder Strike show the system's flexibility—despite genre mismatch, songs with matching mood and energy rank in the top 5
+- Transparency: Every score component is visible, so users understand *why* they got each recommendation
 
 ---
 
