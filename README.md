@@ -187,6 +187,83 @@ TOP 5 RECOMMENDATIONS FOR: POP / INTENSE
 - Concrete Jungle, Storm Runner, and Thunder Strike show the system's flexibility—despite genre mismatch, songs with matching mood and energy rank in the top 5
 - Transparency: Every score component is visible, so users understand *why* they got each recommendation
 
+### Stress Testing: Multi-Profile Evaluation
+
+The system was tested with 5 diverse user profiles to evaluate robustness:
+
+#### **Profile 1: Workout Enthusiast** (pop + intense + high energy + not acoustic)
+```
+1. GYM HERO              Score: 4.92 ✓ Perfect match (all 4 dimensions)
+2. SUNRISE CITY          Score: 3.47 (pop genre, but happy mood)
+3. CONCRETE JUNGLE       Score: 3.00 (hip-hop, but intense mood + perfect energy)
+4. STORM RUNNER          Score: 2.94 (rock, but intense mood)
+5. THUNDER STRIKE        Score: 2.89 (metal, but intense mood)
+```
+**Observation:** Genre matching dominates. Mood provides secondary ranking. Energy proximity fine-tunes scores.
+
+---
+
+#### **Profile 2: Chill Lofi Lover** (lofi + chill + low energy + acoustic)
+```
+1. LIBRARY RAIN          Score: 5.00 ★ Perfect score (all 4 dimensions aligned)
+2. MIDNIGHT CODING       Score: 4.93 (lofi, chill, energy 0.42 vs 0.35, acoustic)
+3. FOCUS FLOW            Score: 3.45 (lofi genre match despite focused mood)
+4. SPACEWALK THOUGHTS    Score: 2.93 (ambient, chill, very low energy)
+5. COFFEE SHOP STORIES   Score: 1.48 (jazz, but energy match + acoustic)
+```
+**Observation:** Perfect alignment when all preferences match. System clearly differentiates between lofi songs with the same genre but different moods.
+
+---
+
+#### **Profile 3: Deep Intense Rock** (rock + intense + high energy + not acoustic)
+```
+1. STORM RUNNER          Score: 4.97 ✓ Perfect match (rock + intense + high energy)
+2. CONCRETE JUNGLE       Score: 2.97 (hip-hop, but intense mood + energy match)
+3. GYM HERO              Score: 2.95 (pop, but intense mood + high energy)
+4. THUNDER STRIKE        Score: 2.92 (metal, but intense mood + high energy)
+5. NEON PULSE            Score: 1.49 (electronic, mood mismatch despite energy)
+```
+**Observation:** Genre matching is critical. Note: Thunder Strike (metal) ranks higher than Neon Pulse (electronic) because mood match (intense vs energetic) matters more than energy proximity.
+
+---
+
+#### **Profile 4: Acoustic Jazz Enthusiast** (jazz + relaxed + low energy + acoustic)
+```
+1. COFFEE SHOP STORIES   Score: 4.97 ✓ Perfect match (jazz + relaxed + acoustic)
+2. REGGAE VIBES          Score: 2.85 (reggae, but relaxed mood + acoustic)
+3. FOCUS FLOW            Score: 1.50 (lofi + acoustic, but mood mismatch)
+4. MIDNIGHT CODING       Score: 1.48 (lofi + acoustic, but mood mismatch)
+5. MOUNTAIN ECHO         Score: 1.46 (folk + acoustic, but mood mismatch)
+```
+**Observation:** Strong genre bias: jazz songs dominate. Non-jazz recommendations drop to ~1.5/5.0 even with acoustic and energy alignment. This reveals the system's "genre-first" limitation.
+
+---
+
+#### **Profile 5: Adversarial - High Energy + Chill Mood** (ambient + chill + energy 0.9 + acoustic)
+```
+1. SPACEWALK THOUGHTS    Score: 4.38 (ambient match, mood match, BUT energy 0.28 vs 0.9 = -0.62 penalty)
+2. ADVENTURE CALLS       Score: 3.26 (ambient match, mood mismatch)
+3. MIDNIGHT CODING       Score: 2.52 (genre miss, mood match, energy miss)
+4. LIBRARY RAIN          Score: 2.45 (genre miss, mood match, energy miss)
+5. SOUTHERN COMFORT      Score: 1.18 (genre miss, mood miss)
+```
+**Key Finding:** Genre + mood (3.5 points) outweigh conflicting energy (-0.62 penalty). Spacewalk Thoughts wins despite requesting high energy (0.9) but getting ambient (0.28)—a gap of 0.62!
+
+This reveals a **bias in the system**: categorical features (genre, mood) can mask contradictory numeric preferences. A user who says "I want chill music at 0.9 energy" likely made a mistake or has an unusual taste profile.
+
+---
+
+## Summary of Multi-Profile Findings
+
+| Pattern | Observation |
+|---|---|
+| **Perfect Matches** | When all 4 dimensions align (Profile 2), scores reach 5.0 |
+| **Genre Dominance** | Genre matching (+2.0) is the primary ranking signal |
+| **Mood Secondary** | Mood matching (+1.5) ranks second; can overcome genre mismatch |
+| **Energy Fine-tuning** | Energy proximity helps differentiate similar songs (e.g., two pop+intense songs) |
+| **Edge Cases** | Conflicting inputs (Profile 5: high energy + chill mood) expose the genre/mood bias |
+| **Acoustic Preference** | Secondary importance; rarely overrides genre/mood decisions |
+
 ---
 
 ## Getting Started
